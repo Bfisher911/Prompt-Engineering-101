@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineering 101</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS for additional styling and animations -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+        /* Style for the slider thumb */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6; /* bg-blue-500 */
+            cursor: pointer;
+            border-radius: 50%;
+            margin-top: -8px; 
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #3b82f6; /* bg-blue-500 */
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        /* Custom styles for the temperature dial */
+        #temp-dial-knob {
+            transition: transform 0.1s linear;
+        }
+        /* Smooth transitions for various elements */
+        .smooth-transition {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Styling for active tab */
+        .tab-active {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: white;
+        }
+        /* Styling for prompt text highlighting */
+        .prompt-role { color: #f59e0b; /* amber-500 */ font-weight: bold; }
+        .prompt-content { color: #e5e7eb; /* gray-200 */ }
+        .prompt-example { color: #86efac; /* green-300 */ }
+    </style>
+</head>
+<body class="text-gray-200 p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Main Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Prompt Engineering 101</h1>
+            <p class="text-lg text-gray-400">Try changing the tab, slider, and dial to see how prompts evolve.</p>
+        </header>
+
+        <!-- Main Grid for Interactive Elements -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Left Column: Roles and Shots -->
+            <div class="space-y-8">
+                <!-- 1. Role Playground -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-white mb-4 flex items-center">
+                        Role Playground
+                        <button data-modal-target="role-modal" class="ml-2 text-gray-400 hover:text-blue-400 smooth-transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </button>
+                    </h2>
+                    
+                    <!-- Role Tabs -->
+                    <div id="role-tabs" class="flex border-b border-gray-700 mb-4">
+                        <button data-role="System" class="role-tab tab-active py-2 px-4 font-semibold text-gray-300 rounded-t-lg smooth-transition">System</button>
+                        <button data-role="User" class="role-tab py-2 px-4 font-semibold text-gray-300 rounded-t-lg smooth-transition">User</button>
+                        <button data-role="Assistant" class="role-tab py-2 px-4 font-semibold text-gray-300 rounded-t-lg smooth-transition">Assistant</button>
+                    </div>
+
+                    <!-- User Input -->
+                    <input type="text" id="role-input" value="Summarize this for a 5-year-old." class="w-full bg-gray-700 text-white p-3 rounded-md border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none mb-4">
+
+                    <!-- Prompt Preview -->
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-white">Live Prompt Preview:</h3>
+                        <pre id="role-prompt-preview" class="bg-gray-900 p-4 rounded-md text-sm whitespace-pre-wrap break-words min-h-[100px]"></pre>
+                    </div>
+                </div>
+
+                <!-- 2. Shot Slider -->
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-white mb-4 flex items-center">
+                        Shot Slider
+                        <button data-modal-target="shot-modal" class="ml-2 text-gray-400 hover:text-blue-400 smooth-transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </button>
+                    </h2>
+                    
+                    <!-- Slider Control -->
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="font-mono">0</span>
+                        <input type="range" id="shot-slider" min="0" max="5" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                        <span class="font-mono">5</span>
+                    </div>
+                    <p class="text-center text-white font-semibold text-lg mb-4">Shots: <span id="shot-count">1</span></p>
+
+                    <!-- Prompt Preview -->
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2 text-white">Live Prompt Preview:</h3>
+                        <pre id="shot-prompt-preview" class="bg-gray-900 p-4 rounded-md text-sm whitespace-pre-wrap break-words min-h-[200px]"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Temperature -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col">
+                <h2 class="text-2xl font-bold text-white mb-4 flex items-center">
+                    Temperature Dial
+                    <button data-modal-target="temp-modal" class="ml-2 text-gray-400 hover:text-blue-400 smooth-transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </button>
+                </h2>
+
+                <!-- Temperature Dial and Output -->
+                <div class="flex-grow flex flex-col md:flex-row items-center justify-around gap-8">
+                    <!-- Dial Control -->
+                    <div class="relative w-48 h-48" id="temp-dial-container">
+                        <div class="absolute inset-0 bg-gray-700 rounded-full"></div>
+                        <div id="temp-dial-knob" class="absolute inset-4 bg-gray-900 rounded-full flex items-center justify-center cursor-pointer select-none">
+                            <div class="w-2 h-1/2 bg-blue-500 rounded-full absolute top-0 left-1/2 -translate-x-1/2 origin-bottom"></div>
+                            <div class="z-10 text-center">
+                                <div class="text-3xl font-bold text-white" id="temp-value">0.20</div>
+                                <div class="text-xs text-gray-400">Temperature</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Examples -->
+                    <div class="w-full md:w-1/2 space-y-4">
+                        <div>
+                            <h3 class="font-semibold text-lg text-white mb-2 text-center">Low Temp Output (Consistent)</h3>
+                            <div id="low-temp-output" class="bg-gray-900 p-4 rounded-md text-sm min-h-[100px] smooth-transition opacity-100"></div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-white mb-2 text-center">High Temp Output (Creative)</h3>
+                            <div id="high-temp-output" class="bg-gray-900 p-4 rounded-md text-sm min-h-[100px] smooth-transition opacity-50"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for Definitions -->
+    <!-- Role Modal -->
+    <div id="role-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 max-w-2xl w-full relative">
+            <button data-modal-close="role-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white smooth-transition">&times;</button>
+            <h3 class="text-2xl font-bold text-white mb-4">What are Roles?</h3>
+            <p class="text-gray-300">Roles tell the AI model who is "speaking." The three main roles are:</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 text-gray-300">
+                <li><strong class="text-amber-400">System:</strong> Sets the overall behavior, context, and rules for the AI (e.g., "You are a helpful assistant who speaks like a pirate.").</li>
+                <li><strong class="text-green-400">User:</strong> The person interacting with the AI. This is where you provide your questions or instructions.</li>
+                <li><strong class="text-cyan-400">Assistant:</strong> The AI's previous responses. This is useful for maintaining context in a conversation.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Shot Modal -->
+    <div id="shot-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 max-w-2xl w-full relative">
+            <button data-modal-close="shot-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white smooth-transition">&times;</button>
+            <h3 class="text-2xl font-bold text-white mb-4">What are "Shots"?</h3>
+            <p class="text-gray-300">"Shots" refer to the number of examples you give the AI in the prompt to guide its response. This is also called "few-shot prompting."</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 text-gray-300">
+                <li><strong class="text-amber-400">Zero-shot:</strong> No examples are given. The AI must respond based on its general knowledge.</li>
+                <li><strong class="text-green-400">One-shot:</strong> One example is provided to show the desired format or style.</li>
+                <li><strong class="text-cyan-400">Few-shot:</strong> Multiple examples are given to provide more detailed guidance and improve the accuracy of the output.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Temperature Modal -->
+    <div id="temp-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 max-w-2xl w-full relative">
+            <button data-modal-close="temp-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white smooth-transition">&times;</button>
+            <h3 class="text-2xl font-bold text-white mb-4">What is Temperature?</h3>
+            <p class="text-gray-300">Temperature is a parameter that controls the randomness of the AI's output. It's a value typically between 0.0 and 1.0 (or higher).</p>
+            <ul class="list-disc list-inside mt-4 space-y-2 text-gray-300">
+                <li><strong class="text-blue-400">Low Temperature (e.g., 0.1 - 0.3):</strong> Makes the output more focused, predictable, and deterministic. Good for tasks that require accuracy and consistency, like summarization or code generation.</li>
+                <li><strong class="text-red-400">High Temperature (e.g., 0.8 - 1.0):</strong> Makes the output more random, creative, and surprising. Good for brainstorming, creative writing, or generating diverse ideas.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA --- //
+            // Predefined examples for the shot slider
+            const shotExamples = [
+                { q: "Translate 'hello' to French.", a: "Bonjour" },
+                { q: "Translate 'goodbye' to French.", a: "Au revoir" },
+                { q: "Translate 'thank you' to French.", a: "Merci" },
+                { q: "Translate 'cat' to French.", a: "Chat" },
+                { q: "Translate 'dog' to French.", a: "Chien" }
+            ];
+
+            // Mock data for temperature outputs
+            const tempOutputs = {
+                low: [
+                    "The cat sat on the mat.",
+                    "A feline was resting on the rug.",
+                    "The cat was positioned on the floor covering."
+                ],
+                high: [
+                    "The ginger cat, a fluffy monarch of his domain, surveyed his kingdom from a plush, crimson mat.",
+                    "Upon the woven tapestry of threads, the shadow-cat dreamt of electric mice and cosmic yarn.",
+                    "Mat? Cat? Sat. The words tumbled like dice, landing on a scene of pure domestic bliss."
+                ]
+            };
+
+
+            // --- ELEMENTS --- //
+            // Role Playground elements
+            const roleTabsContainer = document.getElementById('role-tabs');
+            const roleInput = document.getElementById('role-input');
+            const rolePromptPreview = document.getElementById('role-prompt-preview');
+            let activeRole = 'System'; // Default active role
+
+            // Shot Slider elements
+            const shotSlider = document.getElementById('shot-slider');
+            const shotCount = document.getElementById('shot-count');
+            const shotPromptPreview = document.getElementById('shot-prompt-preview');
+
+            // Temperature Dial elements
+            const tempDialContainer = document.getElementById('temp-dial-container');
+            const tempDialKnob = document.getElementById('temp-dial-knob');
+            const tempValueDisplay = document.getElementById('temp-value');
+            const lowTempOutput = document.getElementById('low-temp-output');
+            const highTempOutput = document.getElementById('high-temp-output');
+
+            // Modal elements
+            const modalButtons = document.querySelectorAll('[data-modal-target]');
+            const modalCloseButtons = document.querySelectorAll('[data-modal-close]');
+
+
+            // --- FUNCTIONS --- //
+
+            // Function to update the Role Playground preview
+            const updateRolePrompt = () => {
+                const userInput = roleInput.value || "[Your text here]";
+                rolePromptPreview.innerHTML = `<span class="prompt-role">[${activeRole}]</span>\n<span class="prompt-content">${userInput}</span>`;
+            };
+
+            // Function to update the Shot Slider preview
+            const updateShotPrompt = () => {
+                const count = parseInt(shotSlider.value, 10);
+                shotCount.textContent = count;
+
+                let promptHTML = '';
+                // Add examples based on the slider's value
+                for (let i = 0; i < count; i++) {
+                    promptHTML += `<span class="prompt-example">Q: ${shotExamples[i].q}\nA: ${shotExamples[i].a}</span>\n\n`;
+                }
+                // Add the final user query
+                promptHTML += `<span class="prompt-content">Q: Translate 'book' to French.\nA:</span>`;
+                shotPromptPreview.innerHTML = promptHTML;
+            };
+
+            // Function to update the Temperature Dial and outputs
+            const updateTemperature = (temp) => {
+                // Clamp temperature between 0 and 1
+                temp = Math.max(0, Math.min(1, temp));
+                
+                // Update the display value
+                tempValueDisplay.textContent = temp.toFixed(2);
+
+                // Rotate the knob. Max rotation is 270 degrees (-135 to +135)
+                const angle = (temp - 0.5) * 270;
+                tempDialKnob.style.transform = `rotate(${angle}deg)`;
+
+                // Update output examples based on temperature
+                const lowIndex = Math.floor(temp * (tempOutputs.low.length - 1));
+                const highIndex = Math.floor(temp * (tempOutputs.high.length - 1));
+                
+                lowTempOutput.textContent = tempOutputs.low[lowIndex];
+                highTempOutput.textContent = tempOutputs.high[highIndex];
+                
+                // Adjust opacity to visualize the "weight" of each output
+                lowTempOutput.style.opacity = 1 - temp;
+                highTempOutput.style.opacity = temp;
+            };
+
+
+            // --- EVENT LISTENERS --- //
+
+            // Role Playground: Tab switching
+            roleTabsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('role-tab')) {
+                    // Update active tab styling
+                    roleTabsContainer.querySelectorAll('.role-tab').forEach(tab => tab.classList.remove('tab-active'));
+                    e.target.classList.add('tab-active');
+                    
+                    // Update the active role and refresh the preview
+                    activeRole = e.target.dataset.role;
+                    updateRolePrompt();
+                }
+            });
+
+            // Role Playground: Input changes
+            roleInput.addEventListener('input', updateRolePrompt);
+
+            // Shot Slider: Value changes
+            shotSlider.addEventListener('input', updateShotPrompt);
+
+            // Temperature Dial: Mouse/Touch interaction
+            let isDragging = false;
+            
+            const handleDialMove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const rect = tempDialContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                // Determine clientX/Y for both mouse and touch events
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+
+                // Calculate angle and convert to temperature value
+                const angleRad = Math.atan2(clientY - centerY, clientX - centerX);
+                let angleDeg = angleRad * 180 / Math.PI + 90; // Adjust to start from top
+                if (angleDeg < 0) angleDeg += 360;
+
+                // Map the angle (0-360) to a temperature (0-1), handling the wrap-around
+                // We use a 270-degree arc for the dial
+                let temp = 0;
+                if (angleDeg > 225 && angleDeg < 315) { // Dead zone at the bottom
+                    temp = angleDeg > 270 ? 1 : 0;
+                } else {
+                    let normalizedAngle = angleDeg - 135;
+                    if (normalizedAngle < 0) normalizedAngle += 360;
+                    temp = normalizedAngle / 270;
+                }
+
+                updateTemperature(temp);
+            };
+
+            const startDragging = (e) => { isDragging = true; handleDialMove(e); };
+            const stopDragging = () => { isDragging = false; };
+
+            tempDialKnob.addEventListener('mousedown', startDragging);
+            tempDialKnob.addEventListener('touchstart', startDragging, { passive: false });
+            
+            document.addEventListener('mousemove', handleDialMove);
+            document.addEventListener('touchmove', handleDialMove, { passive: false });
+
+            document.addEventListener('mouseup', stopDragging);
+            document.addEventListener('touchend', stopDragging);
+
+            // Modals: Open and close logic
+            modalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modalId = button.dataset.modalTarget;
+                    document.getElementById(modalId).classList.remove('hidden');
+                });
+            });
+
+            modalCloseButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modalId = button.dataset.modalClose;
+                    document.getElementById(modalId).classList.add('hidden');
+                });
+            });
+            
+            // Close modal when clicking on the background overlay
+            document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                    }
+                });
+            });
+
+            // --- INITIALIZATION --- //
+            // Set the initial state of all interactive elements on page load
+            updateRolePrompt();
+            updateShotPrompt();
+            updateTemperature(0.2); // Default temperature
+        });
+    </script>
+</body>
+</html>
